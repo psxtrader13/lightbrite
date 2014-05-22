@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+
+<html lang="en-us">
+
+<head>
+
+<meta charset="utf-8">
+
+<title></title>
+
+<script>
+    
+var liteBrite = (function () {
+    
+    var dotRadius = 5;
+    var canvas;
+    var context;
+    var numDotsInRow = 0;
+    var numDotsInColumn = 0;
+    
+    
+    return {
+        
+        
+        initCanvas : function() {
+
+            canvas = document.getElementById('cvs');
+            context = canvas.getContext('2d');
+            
+            
+            var rowCounter = 0;
+            var colCounter = 0;
+            
+            
+            var canvasWidth = canvas.width;
+            var canvasHeight = canvas.height;
+            
+            var dotMargin = Math.ceil(dotRadius / 2);
+
+            var curX = dotMargin * -1;
+            var curY = dotRadius;
+
+            while (1<2) {
+                
+                var centerX = curX + dotRadius + dotMargin;
+                var centerY = curY;
+                
+                if (centerX > (canvasWidth - dotRadius)) {
+                    centerX = dotRadius;
+                    centerY = curY + ((2 * dotRadius) + dotMargin);
+                    if (numDotsInRow == 0) {
+                        numDotsInRow = rowCounter;
+                    }
+                    colCounter++;
+                }
+
+                if (centerY > (canvasHeight - dotRadius)) {
+                    break;
+                }
+                
+
+                context.beginPath();
+                context.arc(centerX, centerY, dotRadius, 0, 2 * Math.PI, false);
+                context.fillStyle = 'green';
+                context.fill();
+                //context.lineWidth = 5;
+                //context.strokeStyle = '#003300';
+                //context.stroke();
+                
+                rowCounter++;
+                
+                curX = centerX + (2 * dotRadius) + dotMargin;
+                curY = centerY;
+
+
+    
+            }
+            
+            numDotsInColumn = colCounter;
+            
+        } , 
+        
+        
+        initCanvas2 : function() {
+
+            var canvasWidth = canvas.width;
+            var canvasHeight = canvas.height;
+            
+            var dotMargin = Math.ceil(dotRadius / 2);
+
+            var curX = dotMargin * -1;
+            var curY = dotRadius;
+            
+            var cnt = 0;
+            
+            var blockWidth = Math.ceil(document.getElementById('tmpCanvas').width / numDotsInRow);
+            var blockHeight = Math.ceil(document.getElementById('tmpCanvas').height / numDotsInColumn);
+console.log(blockWidth);
+console.log(blockHeight);
+
+            var tmpStartX = 0;
+            var tmpStartY = 0;
+
+
+            while (1<2) {
+
+                
+                // Get average color of pixels
+                var pixelData = document.getElementById('tmpCanvas').getContext('2d').getImageData(tmpStartX , tmpStartY , blockWidth , blockHeight);
+                
+                var rgb = {r:0,g:0,b:0};
+
+                var length = pixelData.data.length;
+                var count = 0;
+                    
+                var i = -4;
+                while ( (i += 4) < length ) {
+                    ++count;
+                    rgb.r += pixelData.data[i];
+                    rgb.g += pixelData.data[i+1];
+                    rgb.b += pixelData.data[i+2];
+                }
+
+                // ~~ used to floor values
+                rgb.r = ~~(rgb.r/count);
+                rgb.g = ~~(rgb.g/count);
+                rgb.b = ~~(rgb.b/count);                
+                
+                var hex = "#" + ("000000" + rgbToHex(rgb.r, rgb.g, rgb.b)).slice(-6);
+                cnt++;
+
+                
+                var centerX = curX + dotRadius + dotMargin;
+                var centerY = curY;
+                
+                
+                tmpStartX = tmpStartX + blockWidth; 
+
+                if (centerX > (canvasWidth - dotRadius)) {
+                    centerX = dotRadius;
+                    centerY = curY + ((2 * dotRadius) + dotMargin);
+                    
+                    tmpStartX = 0;
+                    tmpStartY = tmpStartY + blockHeight; 
+                }
+
+                if (centerY > (canvasHeight - dotRadius)) {
+                    break;
+                }
+                
+
+                context.beginPath();
+                context.arc(centerX, centerY, dotRadius, 0, 2 * Math.PI, false);
+                context.fillStyle = hex;
+                context.fill();
+                //context.lineWidth = 5;
+                //context.strokeStyle = '#003300';
+                //context.stroke();
+                
+                curX = centerX + (2 * dotRadius) + dotMargin;
+                curY = centerY;
+                
+                
+
+
+    
+            }
+
+            
+        } ,
+        
+        
+        showImage : function(imgObj) {
+            
+            var tmpCanvas = document.createElement('canvas');
+            tmpCanvas.id = 'tmpCanvas';
+            tmpCanvas.width = imgObj.width;
+            tmpCanvas.height = imgObj.height;
+            document.body.appendChild(tmpCanvas);
+            tmpCanvas.getContext('2d').drawImage(imgObj, 0, 0, imgObj.width, imgObj.height);
+            var pixelData = tmpCanvas.getContext('2d').getImageData(0 , 0 , 1 , 2).data;
+            var hex = "#" + ("000000" + rgbToHex(pixelData[0], pixelData[1], pixelData[2])).slice(-6);
+            console.log(hex);
+            
+            liteBrite.initCanvas2();
+            
+        }
+        
+        
+        
+    };
+
+}());    
+    
+    function rgbToHex(r, g, b){
+    if (r > 255 || g > 255 || b > 255)
+        throw "Invalid color component";
+    return ((r << 16) | (g << 8) | b).toString(16);
+    }
+</script>
+
+
+<body>
+    
+    <img src="#" width="100" height="100" border="1" id="dragImg" />
+    <canvas id="cvs" width="500" height="500"></canvas>
+    <script>
+        
+
+
+
+dragImg.addEventListener("load", function () {
+}, false);
+
+dragImg.addEventListener("dragover", function (evt) {
+    evt.preventDefault();
+}, false);
+
+dragImg.addEventListener("drop", function (evt) {
+    var files = evt.dataTransfer.files;
+    if (files.length > 0) {
+        var file = files[0];
+        if (typeof FileReader !== "undefined" && file.type.indexOf("image") != -1) {
+            var reader = new FileReader();
+            reader.onload = function (evt) {
+                dragImg.src = evt.target.result;
+
+                liteBrite.initCanvas();
+        
+                liteBrite.showImage(dragImg);
+
+            };
+            reader.readAsDataURL(file);
+            
+
+        }
+    }
+    evt.preventDefault();
+}, false);
+        
+        
+        
+        
+        
+    </script>
+
+
+
+
+
+    
+</body>
+
+
+</html>
